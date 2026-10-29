@@ -642,3 +642,23 @@ class SubGymMarketsExecutionEnv_v0(AbidesGymMarketsEnv):
             }
         else:
             return asdict(self.custom_metrics_tracker)
+
+
+    def reset(self, *, seed=None, options=None):
+            # Per-episode state must be cleared BEFORE the base reset, because
+            # the base reset computes the first state (which sets entry_price
+            # when step_index == 0).
+            self.step_index = 0
+            self.entry_price = 1
+            self.far_touch = 1
+            self.near_touch = 1
+            self.previous_marked_to_market = self.starting_cash
+            self.pnl = 0
+    
+            max_steps = self.custom_metrics_tracker.num_max_steps_per_episode
+            self.custom_metrics_tracker = self.CustomMetricsTracker()
+            self.custom_metrics_tracker.num_max_steps_per_episode = max_steps
+            for i in range(self.num_actions):
+                self.custom_metrics_tracker.action_counter[f"action_{i}"] = 0
+    
+            return super().reset(seed=seed, options=options)
